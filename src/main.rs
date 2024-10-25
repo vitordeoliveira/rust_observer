@@ -1,39 +1,49 @@
-trait Observable<T: Observer> {
-    fn set_message(&mut self, message: String);
+use std::fmt::{Debug, Display};
+
+trait Observable<T, M>
+where
+    T: Observer<M>,
+    M: Clone + Debug + Display,
+{
+    fn set_message(&mut self, message: M);
     fn new() -> Self;
     fn register(&mut self, observer: T);
     fn unregister(&mut self, observer: T);
     fn notify(&mut self);
 }
 
-trait Observer {
-    fn update(&self, message: String);
+trait Observer<M: Clone + Debug + Display> {
+    fn update(&self, message: M);
 }
 
 #[derive(PartialEq, Clone, Copy)]
 struct ObserverProcess {}
 
-struct Subject<T: Observer> {
-    message: String,
+struct Subject<T: Observer<M>, M: Clone + Debug + Display> {
+    message: Option<M>,
     observers: Vec<T>,
 }
 
-impl Observer for ObserverProcess {
-    fn update(&self, message: String) {
+impl<M: Clone + Debug + Display> Observer<M> for ObserverProcess {
+    fn update(&self, message: M) {
         println!("message: {message}");
     }
 }
 
-impl<T: Observer + PartialEq> Observable<T> for Subject<T> {
-    fn new() -> Subject<T> {
+impl<T, M> Observable<T, M> for Subject<T, M>
+where
+    T: Observer<M> + PartialEq,
+    M: Clone + Debug + Display,
+{
+    fn new() -> Subject<T, M> {
         Subject {
-            message: "".to_string(),
+            message: None,
             observers: vec![],
         }
     }
 
-    fn set_message(&mut self, message: String) {
-        self.message = message;
+    fn set_message(&mut self, message: M) {
+        self.message = Some(message);
         self.notify();
     }
 
@@ -48,13 +58,15 @@ impl<T: Observer + PartialEq> Observable<T> for Subject<T> {
 
     fn notify(&mut self) {
         for observer in &self.observers {
-            observer.update(self.message.clone());
+            if let Some(value) = self.message.clone() {
+                observer.update(value);
+            };
         }
     }
 }
 
 fn main() {
-    let mut subject = Subject::<ObserverProcess>::new();
+    let mut subject = Subject::<ObserverProcess, String>::new();
 
     let a = ObserverProcess {};
     let b = ObserverProcess {};
