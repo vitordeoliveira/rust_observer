@@ -1,20 +1,7 @@
-use std::fmt::{Debug, Display};
-
-trait Observable<T>
-where
-    T: Observer,
-{
-    fn set_message(&mut self, message: T::Message);
-    fn new() -> Self;
-    fn register(&mut self, observer: T);
-    fn unregister(&mut self, observer: T);
-    fn notify(&mut self);
-}
-
-trait Observer {
-    type Message: Clone + Debug + Display;
-    fn update(&self, message: Self::Message);
-}
+use observable::Observable;
+use observer::Observer;
+mod observable;
+mod observer;
 
 #[derive(PartialEq, Clone, Copy)]
 struct ObserverProcess {}
@@ -33,7 +20,7 @@ impl Observer for ObserverProcess {
 
 impl<T> Observable<T> for Subject<T>
 where
-    T: Observer + PartialEq,
+    T: Observer,
 {
     fn new() -> Subject<T> {
         Subject {
@@ -66,7 +53,7 @@ where
 }
 
 fn main() {
-    let mut subject = Subject::<ObserverProcess>::new();
+    let mut subject: Subject<ObserverProcess> = Subject::new();
 
     let a = ObserverProcess {};
     let b = ObserverProcess {};
