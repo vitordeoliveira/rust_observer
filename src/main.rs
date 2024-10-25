@@ -1,48 +1,48 @@
 use std::fmt::{Debug, Display};
 
-trait Observable<T, M>
+trait Observable<T>
 where
-    T: Observer<M>,
-    M: Clone + Debug + Display,
+    T: Observer,
 {
-    fn set_message(&mut self, message: M);
+    fn set_message(&mut self, message: T::Message);
     fn new() -> Self;
     fn register(&mut self, observer: T);
     fn unregister(&mut self, observer: T);
     fn notify(&mut self);
 }
 
-trait Observer<M: Clone + Debug + Display> {
-    fn update(&self, message: M);
+trait Observer {
+    type Message: Clone + Debug + Display;
+    fn update(&self, message: Self::Message);
 }
 
 #[derive(PartialEq, Clone, Copy)]
 struct ObserverProcess {}
 
-struct Subject<T: Observer<M>, M: Clone + Debug + Display> {
-    message: Option<M>,
+struct Subject<T: Observer> {
+    message: Option<T::Message>,
     observers: Vec<T>,
 }
 
-impl<M: Clone + Debug + Display> Observer<M> for ObserverProcess {
-    fn update(&self, message: M) {
+impl Observer for ObserverProcess {
+    type Message = String;
+    fn update(&self, message: Self::Message) {
         println!("message: {message}");
     }
 }
 
-impl<T, M> Observable<T, M> for Subject<T, M>
+impl<T> Observable<T> for Subject<T>
 where
-    T: Observer<M> + PartialEq,
-    M: Clone + Debug + Display,
+    T: Observer + PartialEq,
 {
-    fn new() -> Subject<T, M> {
+    fn new() -> Subject<T> {
         Subject {
             message: None,
             observers: vec![],
         }
     }
 
-    fn set_message(&mut self, message: M) {
+    fn set_message(&mut self, message: T::Message) {
         self.message = Some(message);
         self.notify();
     }
@@ -66,7 +66,7 @@ where
 }
 
 fn main() {
-    let mut subject = Subject::<ObserverProcess, String>::new();
+    let mut subject = Subject::<ObserverProcess>::new();
 
     let a = ObserverProcess {};
     let b = ObserverProcess {};
