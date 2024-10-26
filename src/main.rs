@@ -1,27 +1,13 @@
-use std::fmt::{Debug, Display};
-
-trait Observable<T>
-where
-    T: Observer,
-{
-    fn set_message(&mut self, message: T::Message);
-    fn new() -> Self;
-    fn register(&mut self, observer: T);
-    fn unregister(&mut self, observer: T);
-    fn notify(&mut self);
-}
-
-trait Observer {
-    type Message: Clone + Debug + Display;
-    fn update(&self, message: Self::Message);
-}
+use observable::Observable;
+use observer::Observer;
+mod observable;
+mod observer;
 
 #[derive(PartialEq, Clone, Copy)]
 struct ObserverProcess {}
 
-struct Subject<T: Observer> {
-    message: Option<T::Message>,
-    observers: Vec<T>,
+struct Subject {
+    observers: Vec<ObserverProcess>,
 }
 
 impl Observer for ObserverProcess {
@@ -31,42 +17,29 @@ impl Observer for ObserverProcess {
     }
 }
 
-impl<T> Observable<T> for Subject<T>
-where
-    T: Observer + PartialEq,
-{
-    fn new() -> Subject<T> {
-        Subject {
-            message: None,
-            observers: vec![],
-        }
+impl Observable<ObserverProcess> for Subject {
+    fn new() -> Subject {
+        Subject { observers: vec![] }
     }
 
-    fn set_message(&mut self, message: T::Message) {
-        self.message = Some(message);
-        self.notify();
-    }
-
-    fn register(&mut self, observer: T) {
+    fn register(&mut self, observer: ObserverProcess) {
         self.observers.push(observer);
     }
 
-    fn unregister(&mut self, observer: T) {
+    fn unregister(&mut self, observer: ObserverProcess) {
         let index = self.observers.iter().position(|x| *x == observer).unwrap();
         self.observers.remove(index);
     }
 
-    fn notify(&mut self) {
+    fn notify(&mut self, message: String) {
         for observer in &self.observers {
-            if let Some(value) = self.message.clone() {
-                observer.update(value);
-            };
+            observer.update(message.clone());
         }
     }
 }
 
 fn main() {
-    let mut subject = Subject::<ObserverProcess>::new();
+    let mut subject = Subject::new();
 
     let a = ObserverProcess {};
     let b = ObserverProcess {};
@@ -76,9 +49,9 @@ fn main() {
     subject.register(b);
     subject.register(c);
 
-    subject.set_message("Hello world".to_string());
+    subject.notify("Hello world".to_string());
 
     subject.unregister(b);
 
-    subject.set_message("Bye world".to_string());
+    subject.notify("Bye world".to_string());
 }
