@@ -6,8 +6,11 @@ mod observer;
 #[derive(PartialEq, Clone, Copy)]
 struct ObserverProcess {}
 
-struct Subject {
-    observers: Vec<ObserverProcess>,
+struct Subject<T>
+where
+    T: Observer,
+{
+    observers: Vec<T>,
 }
 
 impl Observer for ObserverProcess {
@@ -17,21 +20,24 @@ impl Observer for ObserverProcess {
     }
 }
 
-impl Observable<ObserverProcess> for Subject {
-    fn new() -> Subject {
+impl<T> Observable<T> for Subject<T>
+where
+    T: Observer,
+{
+    fn new() -> Subject<T> {
         Subject { observers: vec![] }
     }
 
-    fn register(&mut self, observer: ObserverProcess) {
+    fn register(&mut self, observer: T) {
         self.observers.push(observer);
     }
 
-    fn unregister(&mut self, observer: ObserverProcess) {
+    fn unregister(&mut self, observer: T) {
         let index = self.observers.iter().position(|x| *x == observer).unwrap();
         self.observers.remove(index);
     }
 
-    fn notify(&mut self, message: String) {
+    fn notify(&mut self, message: T::Message) {
         for observer in &self.observers {
             observer.update(message.clone());
         }
@@ -39,7 +45,7 @@ impl Observable<ObserverProcess> for Subject {
 }
 
 fn main() {
-    let mut subject = Subject::new();
+    let mut subject: Subject<ObserverProcess> = Subject::new();
 
     let a = ObserverProcess {};
     let b = ObserverProcess {};
